@@ -46,6 +46,10 @@
 
 #define CRC32(c, b) ((*(pcrc_32_tab+(((uint32_t)(c) ^ (b)) & 0xff))) ^ ((c) >> 8))
 
+#ifndef ZCR_SEED2
+#  define ZCR_SEED2 3141592654UL     /* use PI as default pattern */
+#endif
+
 /***************************************************************************/
 
 uint8_t decrypt_byte(uint32_t *pkeys)
@@ -111,8 +115,31 @@ int cryptrand(unsigned char *buf, unsigned int len)
 
     return rlen;
 #else
-    arc4random_buf(buf, len);
-    return len;
+    // BSD extension not available everywhere...
+
+    // arc4random_buf(buf, len);
+    // return len;
+
+    // Old code from minizip 1.1.0
+    static unsigned calls = 0;
+    int rlen = 0;
+
+    int frand = open("/dev/urandom", O_RDONLY);
+    if (frand != -1)
+    {
+        rlen = (int)read(frand, buf, len);
+        close(frand);
+    }
+    if (rlen < (int)len)
+    {
+        /* Ensure different random header each time */
+        if (++calls == 1)
+            srand((unsigned)(time(NULL) ^ ZCR_SEED2));
+
+        while (rlen < (int)len)
+            buf[rlen++] = (rand() >> 7) & 0xff;
+    }
+    return rlen;
 #endif
 }
 
