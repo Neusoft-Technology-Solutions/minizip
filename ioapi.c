@@ -15,10 +15,16 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #if defined unix || defined __APPLE__
 #include <sys/types.h>
 #include <unistd.h>
+#endif
+
+#if defined(__QNXNTO__)
+#include <sys/stat.h>
+#include <fcntl.h>
 #endif
 
 #include "ioapi.h"
